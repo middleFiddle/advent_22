@@ -1,0 +1,407 @@
+# Run as: iex --dot-iex path/to/notebook.exs
+
+# Title: adventofcode.com/2022
+
+Mix.install([{:kino, github: "livebook-dev/kino"}])
+
+# ── /day/1#part1 ──
+
+# Mix.install([:kino])
+
+input = Kino.Input.textarea("Please paste your input:")
+
+elfFood = Kino.Input.read(input)
+
+elfFood
+|> String.split("\n\n", trim: true)
+|> Enum.map(&String.split(&1, ~r/(\n)/, trim: true))
+|> Enum.map(fn el -> Enum.map(el, &String.to_integer(&1)) end)
+|> Enum.map(fn el -> Enum.reduce(el, 0, &(&1 + &2)) end)
+|> Enum.max()
+
+# def equippedElf
+
+# ── /day/1#part2 ── (⎇ from /day/1#part1)
+
+# defmodule ElvesGottaEat do
+#   def total_calories(list) do
+#     list
+#     |> String.split("\n\n", trim: true)
+#     |> Enum.map(&String.split(&1, ~r/(\n)/, trim: true))
+#     |> Enum.map(fn el -> Enum.map(el, &String.to_integer(&1)) end)
+#     |> Enum.map(fn el -> Enum.reduce(el, 0, &(&1 + &2)) end)
+#   end
+
+#   def top_three_elves(list) do
+#     list
+#     |> Enum.sort()
+#     |> Enum.take(-3)
+#     |> Enum.reduce(0, &(&1 + &2))
+#   end
+# end
+
+# each_elf_supply = ElvesGottaEat.total_calories(elfFood)
+
+# ElvesGottaEat.top_three_elves(each_elf_supply)
+
+# ── /day/3#part1 ──
+
+day3 = Kino.Input.textarea("Drop your rucksacks here!")
+
+rucksacks = Kino.Input.read(day3)
+
+# ### Breakdown
+
+# **Each line a rucksack**
+
+# * for each rucksack
+#   * split the sack into halves
+#   * find the type they have in common
+#     * NOTE: In Elixir, we can't do this imperatively, BUT 
+#       we can use mapSets to compare to enumerables
+#   * map each rucksack to it's priority value
+# * sum the list
+
+list_rucksacks =
+  rucksacks
+  |> String.split("\n", trim: true)
+
+dictionary = [
+  "a",
+  "b",
+  "c",
+  "d",
+  "e",
+  "f",
+  "g",
+  "h",
+  "i",
+  "j",
+  "k",
+  "l",
+  "m",
+  "n",
+  "o",
+  "p",
+  "q",
+  "r",
+  "s",
+  "t",
+  "u",
+  "v",
+  "w",
+  "x",
+  "y",
+  "z",
+  "A",
+  "B",
+  "C",
+  "D",
+  "E",
+  "F",
+  "G",
+  "H",
+  "I",
+  "J",
+  "K",
+  "L",
+  "M",
+  "N",
+  "O",
+  "P",
+  "Q",
+  "R",
+  "S",
+  "T",
+  "U",
+  "V",
+  "W",
+  "X",
+  "Y",
+  "Z"
+]
+
+# dictionary courtesy of ChatGPT
+
+defmodule RuckSack do
+  def split(rucksack) do
+    length = String.length(rucksack)
+
+    String.split_at(rucksack, div(length, 2))
+    |> Tuple.to_list()
+  end
+
+  def find_common_element(split_ruck) do
+    [first, second] = split_ruck
+    list_first = String.split(first, "", trim: true)
+    list_second = String.split(second, "", trim: true)
+
+    MapSet.intersection(MapSet.new(list_first), MapSet.new(list_second))
+    |> MapSet.to_list()
+  end
+
+  def handle_three(group_of_three) do
+    [first, second, third] = group_of_three
+    list_first = String.split(first, "", trim: true)
+    list_second = String.split(second, "", trim: true)
+    list_third = String.split(third, "", trum: true)
+    first_two = MapSet.intersection(MapSet.new(list_first), MapSet.new(list_second))
+
+    MapSet.intersection(first_two, MapSet.new(list_third))
+    |> MapSet.to_list()
+  end
+end
+
+list_rucksacks
+|> Stream.map(&RuckSack.split(&1))
+|> Enum.map(&RuckSack.find_common_element(&1))
+|> List.flatten()
+|> Stream.map(&Enum.find_index(dictionary, fn x -> x == &1 end))
+|> Stream.map(&(&1 + 1))
+|> Enum.sum()
+
+# ── /day/3#part2 ── (⎇ from /day/3#part1)
+
+# dictionary
+
+# list_rucksacks
+# |> Enum.chunk_every(3)
+# |> Enum.map(&RuckSack.handle_three(&1))
+# |> List.flatten()
+# |> Enum.map(&Enum.find_index(dictionary, fn x -> x == &1 end))
+# |> Stream.map(&(&1 + 1))
+# |> Enum.sum()
+
+# ── /day/4#part1 ──
+
+day4 = Kino.Input.textarea("All pairs of elves put their section IDs here
+")
+
+pairs = Kino.Input.read(day4)
+
+defmodule Elves do
+  def list_range_mapset(tupl) do
+    range = Range.new(elem(hd(tupl), 0), elem(hd(tl(tupl)), 0))
+
+    Enum.to_list(range)
+    |> MapSet.new()
+  end
+
+  def integers(list_pair) do
+    list_pair
+    |> Stream.map(&String.split(&1, "-", trim: true))
+
+    # Enum.map(&(Enum.with_index(&1)))
+    |> Stream.map(&Enum.map(&1, fn x -> Integer.parse(x) end))
+    |> Enum.map(&list_range_mapset(&1))
+  end
+end
+
+part1 =
+  pairs
+  |> String.split("\n")
+  |> Stream.map(&String.split(&1, ","))
+  |> Enum.to_list()
+  |> Enum.map(fn x -> Elves.integers(x) end)
+  |> Enum.map(&Enum.sort(&1))
+  |> Enum.map(fn x ->
+    [h, t] = x
+    MapSet.subset?(h, t)
+  end)
+  |> Enum.filter(&(&1 == true))
+  |> length()
+
+part1
+
+part2 =
+  pairs
+  |> String.split("\n")
+  |> Stream.map(&String.split(&1, ","))
+  |> Enum.to_list()
+  |> Enum.map(fn x -> Elves.integers(x) end)
+  |> Enum.map(&Enum.sort(&1))
+  |> Enum.map(fn x ->
+    [h, t] = x
+    MapSet.disjoint?(h, t)
+  end)
+  |> Enum.filter(&(&1 == false))
+  |> length()
+
+part2
+
+# We grab an array of two strings as shown
+
+# Each string
+
+# * needs to be split at the "-"
+
+# * each remaining element needs to become an integer
+
+#   * this step has an interesting language bug
+
+#   ```elixir
+#   iex(10)> b
+#   [{7, ""}, {9, ""}]
+#   iex(11)> Enum.map(b,fn x -> elem(x,0)end)
+#   '\a\t'
+#   ```
+
+# * once we had 2 integers, we can map to Range
+
+# * Range to list, list to mapset
+
+# ── /day/5#part1 ──
+
+day5 = Kino.Input.textarea("Drop your stacks and restacking instuctions here!")
+
+stacks_restack = Kino.Input.read(day5)
+
+# #### Breakdown
+
+# ###### Parsing
+
+# * split at the '\n\n' to separate the stack and the restacking instructions
+
+# ###### Building the elves' stacks for processing
+
+# * split on the new lines
+# * each substring should be split ""  
+#   ASSUMPTION each string is of equal length
+
+# ###### Lists in elixir perform excellently as a stack by prepending the list for <Push> and getting the List.first() for <Pop>
+
+[stacks, restack] = String.split(stacks_restack, "\n\n", trim: true)
+
+stack_build =
+  stacks
+  |> String.split("\n")
+  |> Enum.map(&String.split(&1, "", trim: true))
+
+# Let's just check the length of these lists
+check =
+  stack_build
+  |> Enum.map(&length(&1))
+
+inspect(check, charlists: :ascharlists)
+
+# let's reverse this stack so we can find indices of each alphanumeric character in the head (this holds our keys)
+yo = Map.new()
+
+stacks =
+  stack_build
+  |> Enum.map(fn x -> tl(x) end)
+  |> Enum.map(&Enum.take_every(&1, 4))
+  |> Enum.zip()
+  |> Enum.map(&Tuple.to_list(&1))
+  |> Enum.map(&Enum.filter(&1, fn x -> x != " " end))
+
+stacks =
+  Map.new(stacks, fn list -> {hd(Enum.reverse(list)), Enum.reverse(tl(Enum.reverse(list)))} end)
+
+stacks
+|> Map.values()
+|> Enum.map(&Enum.take(&1, 3))
+
+# ### Let's Parse the Restack
+
+restack
+
+stacks
+|> Map.keys()
+
+yo = %{}
+
+restack =
+  restack
+  |> String.split("\n")
+  |> Stream.map(&String.split(&1, " "))
+  |> Stream.map(&Enum.chunk_every(&1, 2))
+  |> Enum.map(&Enum.map(&1, fn x -> List.to_tuple(x) end))
+  |> Enum.map(&Enum.map(&1, fn x -> elem(x, 1) end))
+
+defmodule CraneStacks do
+  def copy_instructions(lst) do
+    for l <- lst do
+      n = hd(l)
+      n = String.to_integer(n)
+      tail = tl(l)
+      dup_tail = for _ <- 1..n, do: tail
+      dup_tail
+    end
+  end
+
+  def process_subroutine(map, instr) do
+    head = hd(instr)
+
+    if tuple_size(head) == 2 do
+      to = elem(head, 1)
+      from = elem(head, 0)
+      from_stack = Map.get(map, from)
+      to_stack = Map.get(map, to)
+      {list1, list2} = move_box(from_stack, to_stack)
+      inner_map = Map.replace(map, from, list1)
+      inner_map = Map.replace(inner_map, to, list2)
+    else
+      {slice, from, to} = head
+      from_stack = Map.get(map, from)
+      to_stack = Map.get(map, to)
+      {list1, list2} = move_stack(String.to_integer(slice), from_stack, to_stack)
+      inner_map = Map.replace(map, from, list1)
+      inner_map = Map.replace(inner_map, to, list2)
+    end
+  end
+
+  def move_stack(n, list1, list2) do
+    stack = Enum.take(list1, n)
+    list1 = Enum.drop(list1, n)
+    list2 = stack ++ list2
+    {list1, list2}
+  end
+
+  def process(map, instr) do
+    length = length(instr)
+
+    if length > 1 do
+      inner_map = process_subroutine(map, instr)
+      process(inner_map, tl(instr))
+    else
+      process_subroutine(map, instr)
+    end
+  end
+
+  def move_box(list1, list2) do
+    head = hd(list1)
+    list1 = tl(list1)
+    list2 = [head | list2]
+    {list1, list2}
+  end
+
+  def pop(list) do
+    [_ | tail] = list
+    tail
+  end
+end
+
+part2 = restack
+
+restack =
+  Enum.flat_map(CraneStacks.copy_instructions(restack), fn x -> x end)
+  |> Enum.map(&List.to_tuple(&1))
+
+part2 =
+  part2
+  |> Enum.map(&List.to_tuple(&1))
+
+part2_stacks = CraneStacks.process(stacks, part2)
+
+processed_stacks = CraneStacks.process(stacks, restack)
+
+processed_stacks
+|> Map.values()
+|> Enum.map(&hd(&1))
+|> Enum.join("")
+
+part2_stacks
+|> Map.values()
+|> Enum.map(&hd(&1))
+|> Enum.join("")
